@@ -1,42 +1,45 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>60KM NEW Route Map</title>
+  <meta charset="utf-8" />
+  <title>Leaflet GPX + Custom Marker</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- Leaflet CSS -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
-  />
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/@raruto/leaflet-elevation@2.5.1/dist/leaflet-elevation.min.css"
-  />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 
-  <!-- Custom CSS -->
-  <link rel="stylesheet" href="fullpage.css">
-  <link rel="stylesheet" href="msr_elevation.css">
+  <!-- Elevation CSS -->
+  <link rel="stylesheet" href="css/fullpage.css" />
+  <link rel="stylesheet" href="css/msr_elevation.css" />
+
+  <style>
+    html, body, #map {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+  </style>
 </head>
 <body>
-  <div id="map" style="height: 100vh; width: 100%;"></div>
+  <div id="map"></div>
 
-  <!-- JS Library -->
-  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/togeojson@0.16.0/togeojson.js"></script>
-  <script src="https://unpkg.com/@raruto/leaflet-elevation@2.5.1/dist/leaflet-elevation.min.js"></script>
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <!-- Leaflet GPX Plugin -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
   <script>
-    // Inisialisasi Map
-    var map = L.map('map').setView([-6.9, 107.6], 12); // koordinat awal (ubah sesuai kebutuhan)
+    // Inisialisasi map
+    var map = L.map('map').setView([-6.9147, 107.6098], 12);
 
-    // Basemap
+    // Tambahkan base map
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
     }).addTo(map);
 
-    // Custom Icon
+    // Custom icon
     var customIcon = L.icon({
       iconUrl: 'images/ws_pin.png',
       iconSize: [40, 40],
@@ -44,39 +47,22 @@
       popupAnchor: [0, -40]
     });
 
-    // Elevation Control
-    var controlElevation = L.control.elevation({
-      position: "bottomright",
-      theme: "steelblue-theme",
-      collapsed: false,
-    });
-    controlElevation.addTo(map);
+    // Load file GPX
+    new L.GPX("revisi/60KM_NEW.gpx", {
+      async: true,
+      marker_options: {
+        startIconUrl: 'images/ws_pin.png',
+        endIconUrl: 'images/ws_pin.png',
+        shadowUrl: ''
+      }
+    }).on('loaded', function(e) {
+      map.fitBounds(e.target.getBounds());
+    }).addTo(map);
 
-    // Load GPX
-    fetch('revisi/60KM_NEW.gpx')
-      .then(res => res.text())
-      .then(gpxText => {
-        var parser = new DOMParser();
-        var gpx = parser.parseFromString(gpxText, "application/xml");
-        var geojson = toGeoJSON.gpx(gpx);
-
-        var route = L.geoJSON(geojson, {
-          style: { color: "red", weight: 4 }
-        }).addTo(map);
-
-        map.fitBounds(route.getBounds());
-
-        // Tambah ke Elevasi
-        controlElevation.addData(geojson);
-
-        // Tambah Marker di titik awal & akhir
-        var coords = geojson.features[0].geometry.coordinates;
-        var start = coords[0].reverse();
-        var end = coords[coords.length - 1].reverse();
-
-        L.marker(start, { icon: customIcon }).addTo(map).bindPopup("Start Point");
-        L.marker(end, { icon: customIcon }).addTo(map).bindPopup("Finish Point");
-      });
+    // Contoh marker manual dengan custom icon
+    L.marker([-6.9147, 107.6098], { icon: customIcon })
+      .addTo(map)
+      .bindPopup("Contoh Marker Custom");
   </script>
 </body>
 </html>
