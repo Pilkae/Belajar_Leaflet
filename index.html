@@ -1,142 +1,118 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-	<title>Dieng Caldera Race 2024 75K Category</title>
-	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
-	<link rel="dns-prefetch" href="https://tile.openstreetmap.org">
-	<link rel="dns-prefetch preconnect" href="https://unpkg.com" />
-	<link rel="preload" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" as="script">
-	<link rel="preload" href="https://unpkg.com/leaflet-ui@0.6.0/dist/leaflet-ui.js" as="script">
+  <title>Dieng Caldera Race 2024 - 75K Category</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-	<style>@import 'css/fullpage.css';</style>
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-	<!-- leaflet-ui -->
-	<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-	<script src="https://unpkg.com/leaflet-ui@0.6.0/dist/leaflet-ui.js"></script>
+  <!-- leaflet-gpx -->
+  <script src="https://unpkg.com/leaflet-gpx@1.7.0/gpx.js"></script>
 
-	<!-- leaflet-gpx -->
-	<script src="https://unpkg.com/leaflet-gpx@1.7.0/gpx.js"></script>
+  <!-- leaflet-elevation -->
+  <link rel="stylesheet" href="https://unpkg.com/@raruto/leaflet-elevation@2.5.1/dist/leaflet-elevation.min.css" />
+  <script src="https://unpkg.com/@raruto/leaflet-elevation@2.5.1/dist/leaflet-elevation.min.js"></script>
 
-	<!-- leaflet-elevation -->
-	<link rel="stylesheet" href="https://unpkg.com/@raruto/leaflet-elevation@2.5.1/dist/leaflet-elevation.min.css" />
-	<script src="https://unpkg.com/@raruto/leaflet-elevation@2.5.1/dist/leaflet-elevation.min.js"></script>
+  <style>
+    body, html { margin:0; padding:0; height:100%; }
+    #map { height:80vh; width:100%; }
+    #elevation-div { height:20vh; }
+  </style>
 </head>
-
 <body>
 
-	<div id="map" class="leaflet-map"></div>
+  <div id="map"></div>
+  <div id="elevation-div"></div>
 
-	<script>
-		let opts = {
-			map: {
-				center: [-7.269106967646161, 109.96534826015626],
-				zoom: 6,
-				fullscreenControl: true,
-				layersControl: true,
-				minimapControl: false,
-				searchControl: false,
-				locateControl: false,
-				pegmanControl: false,
-				resizerControl: false,
-				gestureHandling: false,
-				preferCanvas: true,
-				rotate: false,
-				zoomControl: {
-					position: 'topleft',
-				},
-			},
-			elevationControl: {
-				url: "https://assajjadazis.github.io/tracks/75KM_DCR.gpx",
-				options: {
-					theme: "lightblue-theme",
-					width: 100,
-					height: 150,
-					collapsed: true,
-					autohide: true,
-					autofitBounds: true,
-					position: "bottomleft",
-					detached: true,
-					summary: false,
-					imperial: false,
-					downloadLink: false,
-					// altitude: "disabled",
-					slope: "disabled",
-					speed: false,
-					acceleration: false,
-					time: false,
-					legend: true,
-					followMarker: true,
-					almostOver: true,
-					distanceMarkers: false,
-					hotline: false,
-				},
-			},
-			layersControl: {
-				options: {
-					collapsed: false,
-				},
-			},
-		};
+  <script>
+    // --- Base layers ---
+    var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap'
+    });
 
-		let map = L.map('map', opts.map);
+    var esriSat = L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri'
+    });
 
-		let controlElevation = L.control.elevation(opts.elevationControl.options).addTo(map);
-		let controlLayer = L.control.layers(null, null, opts.layersControl.options);
+    var opentopo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+      attribution: 'Map data &copy; OpenTopoMap contributors'
+    });
 
-		controlElevation.on('eledata_loaded', ({layer, name}) => controlLayer.addTo(map) && layer.eachLayer((trkseg) => trkseg.feature.geometry.type != "Point" && controlLayer.addOverlay(trkseg, trkseg.feature && trkseg.feature.properties && trkseg.feature.properties.name || name)));
+    // Inisialisasi peta
+    var map = L.map('map', {
+      center: [-7.2691, 109.9653],
+      zoom: 10,
+      layers: [osm]
+    });
 
-		controlElevation.load(opts.elevationControl.url);
-	</script>
+    // --- Elevation control ---
+    var controlElevation = L.control.elevation({
+      theme: "lightblue-theme",
+      detached: true,
+      elevationDiv: "#elevation-div",
+      collapsed: false,
+      summary: false,
+      followMarker: true,
+      imperial: false,
+      legend: true
+    });
+    controlElevation.addTo(map);
 
-	<!-- i18n -->
-	<script>
+    // --- GPX Track ---
+    var gpxTrack = new L.GPX("revisi/75KM_DCR.gpx", {
+      async: true,
+      marker_options: {
+        startIconUrl: 'https://leafletjs.com/examples/custom-icons/leaf-green.png',
+        endIconUrl: 'https://leafletjs.com/examples/custom-icons/leaf-red.png',
+        shadowUrl: ''
+      }
+    });
 
-		// Register a custom locale
-		L.registerLocale('en:18', {
-			"Acceleration"      : "Acceleration",
-			"Altitude"          : "Elevation",
-			"Slope"             : "Slope",
-			"Speed"             : "Velocity",
-			"Total Length: "    : "L: ",
-			"Max Elevation: "   : "E Max: ",
-			"Min Elevation: "   : "E Min: ",
-			"Avg Elevation: "   : "E Avg: ",
-			"Total Time: "      : "T: ",
-			"Total Ascent: "    : "Asc: ",
-			"Total Descent: "   : "Desc: ",
-			"Min Slope: "       : "S Min: ",
-			"Max Slope: "       : "S Max: ",
-			"Avg Slope: "       : "S Avg: ",
-			"Min Speed: "       : "V Min: ",
-			"Max Speed: "       : "V Max: ",
-			"Avg Speed: "       : "V Avg: ",
-			"Min Acceleration: ": "A Min: ",
-			"Max Acceleration: ": "A Max: ",
-			"Avg Acceleration: ": "A Avg: ",
-		});
+    gpxTrack.on("loaded", function(e) {
+      map.fitBounds(e.target.getBounds());
+    });
 
-		// Enable a custom locale
-		// L.setLocale('en:18');
+    gpxTrack.on("addline", function(e) {
+      controlElevation.addData(e.line);
+    });
 
-		// You can also override a previously defined object
-		L.locales['en'] = L.extend({
-			"y: "               : "",
-			"x: "               : "",
-			"t: "               : "",
-			"T: "               : "",
-			"m: "               : "",
-			"v: "               : "",
-			"a: "               : "",
-		}, L.locales['en']);
+    gpxTrack.addTo(map);
 
-		// Switch the language
-		L.setLocale('en');
+    // --- Custom WS Icon ---
+    var wsIcon = L.icon({
+      iconUrl: 'images/ws_pin.png',  // pastikan path benar
+      iconSize: [40, 40],
+      iconAnchor: [20, 40],
+      popupAnchor: [0, -40]
+    });
 
-	</script>
+    // --- Tambahkan Water Stations ---
+    L.marker([-7.27, 109.95], { icon: wsIcon }).addTo(map).bindPopup("<b>WS1</b><br/>Km 15");
+    L.marker([-7.30, 110.00], { icon: wsIcon }).addTo(map).bindPopup("<b>WS2</b><br/>Km 30");
+    L.marker([-7.33, 110.05], { icon: wsIcon }).addTo(map).bindPopup("<b>WS3</b><br/>Km 45");
 
-	
+    // --- Layer control ---
+    var baseMaps = {
+      "OpenStreetMap": osm,
+      "Satelit (Esri)": esriSat,
+      "OpenTopoMap": opentopo
+    };
+
+    var overlayMaps = {
+      "Rute 75K": gpxTrack,
+      "Water Stations": L.layerGroup([
+        L.marker([-7.27, 109.95], { icon: wsIcon }).bindPopup("WS1 - Km 15"),
+        L.marker([-7.30, 110.00], { icon: wsIcon }).bindPopup("WS2 - Km 30"),
+        L.marker([-7.33, 110.05], { icon: wsIcon }).bindPopup("WS3 - Km 45")
+      ])
+    };
+
+    L.control.layers(baseMaps, overlayMaps, { collapsed: false }).addTo(map);
+  </script>
+
 </body>
-
 </html>
