@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>60KM NEW Route Map</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -15,84 +15,68 @@
     href="https://unpkg.com/@raruto/leaflet-elevation@2.5.1/dist/leaflet-elevation.min.css"
   />
 
-  <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-    }
-    #map {
-      height: 80vh; /* 80% layar untuk peta */
-      width: 100%;
-    }
-    #elevation-div {
-      height: 20vh; /* 20% layar untuk grafik elevasi */
-      width: 100%;
-    }
-    .leaflet-control-attribution {
-      display: none; /* ⚠ Attribution wajib tampil untuk publikasi */
-    }
-  </style>
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="fullpage.css">
+  <link rel="stylesheet" href="msr_elevation.css">
 </head>
 <body>
-  <div id="map"></div>
-  <div id="elevation-div"></div>
+  <div id="map" style="height: 100vh; width: 100%;"></div>
 
-  <!-- Leaflet JS -->
+  <!-- JS Library -->
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/leaflet-gpx@1.7.0/gpx.js"></script>
+  <script src="https://unpkg.com/togeojson@0.16.0/togeojson.js"></script>
   <script src="https://unpkg.com/@raruto/leaflet-elevation@2.5.1/dist/leaflet-elevation.min.js"></script>
 
   <script>
-    // Inisialisasi map
-    var map = L.map("map").setView([-7.25, 110.0], 12);
+    // Inisialisasi Map
+    var map = L.map('map').setView([-6.9, 107.6], 12); // koordinat awal (ubah sesuai kebutuhan)
 
-    // Base map
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: "&copy; OpenStreetMap contributors"
+    // Basemap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-    // Elevation control
+    // Custom Icon
+    var customIcon = L.icon({
+      iconUrl: 'images/ws_pin.png',
+      iconSize: [40, 40],
+      iconAnchor: [20, 40],
+      popupAnchor: [0, -40]
+    });
+
+    // Elevation Control
     var controlElevation = L.control.elevation({
-      theme: "lightblue-theme",
-      detached: true,
-      elevationDiv: "#elevation-div",
-      followMarker: true,
-      almostOver: true,
-      distanceMarkers: false,
-      legend: true
+      position: "bottomright",
+      theme: "steelblue-theme",
+      collapsed: false,
     });
     controlElevation.addTo(map);
 
-    // Custom marker icon
-    var customIcon = L.icon({
-      iconUrl: "images/ws_pin.png", // lokasi file marker
-      iconSize: [32, 32], // ukuran icon
-      iconAnchor: [16, 32], // titik bawah icon
-      popupAnchor: [0, -32] // posisi popup
-    });
+    // Load GPX
+    fetch('revisi/60KM_NEW.gpx')
+      .then(res => res.text())
+      .then(gpxText => {
+        var parser = new DOMParser();
+        var gpx = parser.parseFromString(gpxText, "application/xml");
+        var geojson = toGeoJSON.gpx(gpx);
 
-    // Load file GPX
-    var gpx = new L.GPX("revisi/60KM_NEW.gpx", {
-      async: true,
-      marker_options: {
-        startIconUrl: "images/ws_pin.png",
-        endIconUrl: "images/ws_pin.png",
-        wptIconUrls: {
-          "": "images/ws_pin.png"
-        }
-      }
-    })
-    .on("loaded", function(e) {
-      map.fitBounds(e.target.getBounds()); // zoom otomatis ke jalur
-    })
-    .on("addline", function(e) {
-      controlElevation.addData(e.line); // tambahkan data elevasi
-    })
-    .addTo(map);
+        var route = L.geoJSON(geojson, {
+          style: { color: "red", weight: 4 }
+        }).addTo(map);
+
+        map.fitBounds(route.getBounds());
+
+        // Tambah ke Elevasi
+        controlElevation.addData(geojson);
+
+        // Tambah Marker di titik awal & akhir
+        var coords = geojson.features[0].geometry.coordinates;
+        var start = coords[0].reverse();
+        var end = coords[coords.length - 1].reverse();
+
+        L.marker(start, { icon: customIcon }).addTo(map).bindPopup("Start Point");
+        L.marker(end, { icon: customIcon }).addTo(map).bindPopup("Finish Point");
+      });
   </script>
 </body>
 </html>
