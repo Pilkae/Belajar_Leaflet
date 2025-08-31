@@ -1,23 +1,19 @@
 html,
 body,
-.leaflet-map {
-    height: 100%;
-    width: 100%;
-    padding: 0px;
-    margin: 0px;
+#map {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 body {
-    display: flex;
-    flex-direction: column;
+  display: flex;
+  flex-direction: column;
+  font-family: Arial, sans-serif;
 }
 
-.elevation-summary {
-    margin: 0px;
-   }
-
+/* Hilangkan credit bawaan Leaflet di pojok */
 .leaflet-control-attribution {
-    display: none;
+  display: none;
 }
-
-
